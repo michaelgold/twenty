@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import axios from 'axios';
 
@@ -13,6 +13,8 @@ import { MessagingChannelSyncStatusService } from 'src/modules/messaging/common/
 
 @Injectable()
 export class GoogleAPIRefreshAccessTokenService {
+  private readonly logger = new Logger(GoogleAPIRefreshAccessTokenService.name);
+
   constructor(
     private readonly environmentService: EnvironmentService,
     @InjectObjectMetadataRepository(ConnectedAccountWorkspaceEntity)
@@ -47,7 +49,12 @@ export class GoogleAPIRefreshAccessTokenService {
     }
 
     try {
-      const accessToken = await this.refreshAccessToken(refreshToken);
+      const { accessToken, expiresIn } =
+        await this.refreshAccessToken(refreshToken);
+
+      this.logger.log(
+        `Access token expires in ${expiresIn} seconds for connected account ${connectedAccountId} in workspace ${workspaceId}`,
+      );
 
       await this.connectedAccountRepository.updateAccessToken(
         accessToken,
@@ -87,7 +94,10 @@ export class GoogleAPIRefreshAccessTokenService {
     }
   }
 
-  async refreshAccessToken(refreshToken: string): Promise<string> {
+  async refreshAccessToken(refreshToken: string): Promise<{
+    accessToken: string;
+    expiresIn: number;
+  }> {
     const response = await axios.post(
       'https://oauth2.googleapis.com/token',
       {
@@ -103,6 +113,8 @@ export class GoogleAPIRefreshAccessTokenService {
       },
     );
 
-    return response.data.access_token;
+    const { access_token: accessToken, expires_in: expiresIn } = response.data;
+
+    return { accessToken, expiresIn };
   }
 }
