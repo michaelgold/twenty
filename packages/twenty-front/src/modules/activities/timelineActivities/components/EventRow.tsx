@@ -10,7 +10,6 @@ import { TimelineActivity } from '@/activities/timelineActivities/types/Timeline
 import { getTimelineActivityAuthorFullName } from '@/activities/timelineActivities/utils/getTimelineActivityAuthorFullName';
 import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
 import { ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
-import { useIsMobile } from '@/ui/utilities/responsive/hooks/useIsMobile';
 import { beautifyPastDateRelativeToNow } from '~/utils/date-utils';
 import { isUndefinedOrNull } from '~/utils/isUndefinedOrNull';
 
@@ -28,59 +27,64 @@ const StyledIconContainer = styled.div`
   align-self: normal;
 `;
 
-const StyledItemContainer = styled.div`
+const StyledItemContainer = styled.div<{ isMarginBottom?: boolean }>`
+  align-items: flex-start;
   display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.spacing(1)};
   flex: 1;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing(1)};
   overflow: hidden;
+  margin-bottom: ${({ isMarginBottom, theme }) =>
+    isMarginBottom ? theme.spacing(3) : 0};
 `;
 
 const StyledItemTitleDate = styled.div`
-  align-items: center;
+  align-items: flex-start;
+  padding-top: ${({ theme }) => theme.spacing(1)};
   color: ${({ theme }) => theme.font.color.tertiary};
   display: flex;
-  gap: ${({ theme }) => theme.spacing(2)};
+  gap: ${({ theme }) => theme.spacing(1)};
   justify-content: flex-end;
   margin-left: auto;
-  align-self: baseline;
 `;
 
 const StyledVerticalLineContainer = styled.div`
-  align-items: center;
-  align-self: stretch;
   display: flex;
-  gap: ${({ theme }) => theme.spacing(2)};
+  flex-shrink: 0;
   justify-content: center;
-  width: 26px;
   z-index: 2;
+  height: 100%;
 `;
 
 const StyledVerticalLine = styled.div`
-  align-self: stretch;
   background: ${({ theme }) => theme.border.color.light};
-  flex-shrink: 0;
   width: 2px;
+  z-index: 0;
+  height: 100%;
 `;
 
-const StyledTimelineItemContainer = styled.div<{ isGap?: boolean }>`
+const StyledTimelineItemContainer = styled.div`
+  align-items: stretch;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: ${({ theme }) => theme.spacing(4)};
-  height: ${({ isGap, theme }) =>
-    isGap ? (useIsMobile() ? theme.spacing(6) : theme.spacing(3)) : 'auto'};
+  height: 'auto';
+  justify-content: space-between;
   overflow: hidden;
   white-space: nowrap;
 `;
 
 const StyledSummary = styled.summary`
+  align-items: flex-start;
   display: flex;
   flex: 1;
   flex-direction: row;
   gap: ${({ theme }) => theme.spacing(1)};
-  align-items: center;
-  overflow: hidden;
+`;
+
+const StyledLeftContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing(1)};
 `;
 
 type EventRowProps = {
@@ -118,13 +122,20 @@ export const EventRow = ({
   return (
     <>
       <StyledTimelineItemContainer>
-        <StyledIconContainer>
-          <EventIconDynamicComponent
-            event={event}
-            linkedObjectMetadataItem={linkedObjectMetadataItem}
-          />
-        </StyledIconContainer>
-        <StyledItemContainer>
+        <StyledLeftContainer>
+          <StyledIconContainer>
+            <EventIconDynamicComponent
+              event={event}
+              linkedObjectMetadataItem={linkedObjectMetadataItem}
+            />
+          </StyledIconContainer>
+          {!isLastEvent && (
+            <StyledVerticalLineContainer>
+              <StyledVerticalLine />
+            </StyledVerticalLineContainer>
+          )}
+        </StyledLeftContainer>
+        <StyledItemContainer isMarginBottom={!isLastEvent}>
           <StyledSummary>
             <EventRowDynamicComponent
               authorFullName={authorFullName}
@@ -134,18 +145,11 @@ export const EventRow = ({
               linkedObjectMetadataItem={linkedObjectMetadataItem}
             />
           </StyledSummary>
-          <StyledItemTitleDate id={`id-${event.id}`}>
-            {beautifiedCreatedAt}
-          </StyledItemTitleDate>
         </StyledItemContainer>
+        <StyledItemTitleDate id={`id-${event.id}`}>
+          {beautifiedCreatedAt}
+        </StyledItemTitleDate>
       </StyledTimelineItemContainer>
-      {!isLastEvent && (
-        <StyledTimelineItemContainer isGap>
-          <StyledVerticalLineContainer>
-            <StyledVerticalLine />
-          </StyledVerticalLineContainer>
-        </StyledTimelineItemContainer>
-      )}
     </>
   );
 };
